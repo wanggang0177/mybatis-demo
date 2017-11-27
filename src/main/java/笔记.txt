@@ -1,0 +1,55 @@
+1.SqlSession sqlSession = DBUtil.getSessionFactory().openSession();
+System.out.println(sqlSession.getClass().getName());//org.apache.ibatis.session.defaults.DefaultSqlSession
+2.UserDao userDao = sqlSession.getMapper(UserDao.class);
+3.User u = userDao.selectUserById(1);
+
+mybatis通过接口实现数据操作的原理：
+主要方法sqlSession.getMapper(UserDao.class);
+调用该方法时到底经历了什么？
+具体主要流程步骤：
+1.加载配置文件mybatis-config.xml => UserMapper.xml
+当加载到UserMapper.xml文件时，通过namespace="mybatis.demo.dao.UserDao" 创建UserDao对象，并且UserDao对象以key的方式放到MapperRegistry（mapper注册器）中（见名知意），
+那么既然有key，value传入的是什么呢？通过查看源码，value是一个UserDao的代理对象，且实现了UserDao接口；
+通过源码可得知：
+	final MapperProxyFactory<T> mapperProxyFactory = (MapperProxyFactory<T>) knownMappers.get(type);
+    if (mapperProxyFactory == null)
+      throw new BindingException("Type " + type + " is not known to the MapperRegistry.");
+    try {
+      return mapperProxyFactory.newInstance(sqlSession);
+    } catch (Exception e) {
+      throw new BindingException("Error getting mapper instance. Cause: " + e, e);
+    }
+mapperProxyFactory：mapper代理工厂，生成的对象就是代理对象；
+
+至于MapperRegistry对象里面的value为什么是代理对象且实现了UserDao接口？
+UserDao userDao = sqlSession.getMapper(UserDao.class);
+userDao该对象通过debug可得知为：org.apache.ibatis.binding.MapperProxy@5c5eefef类型，既然能用UserDao接收，所以应该实现了UserDao接口；
+
+
+UserMapper.xml的作用：
+<mapper namespace="mybatis.demo.dao.UserDao">
+	<select id="selectUserById" parameterType="int" resultType="User">
+		select *
+		from User where id = #{id}
+	</select>
+	
+	<insert id="insertUser" parameterType="User">
+		insert into user (id, name, age) value 
+		(
+		#{id},
+		#{name},
+		#{age}
+		); 
+	</insert>
+</mapper>
+通过该文件可以生成一个实现了UserDao接口的代理对象；并把UserDao对象当做key，代理对象当做value放到MapperRegistry中；
+
+
+2.多数据库配置问题：
+不建议在mybatis-config.xml直接写
+<properties resource="mybatis/db-config.properties">
+</properties>配置数据库，
+这样如果连接多个数据库时，会修改代码。
+建议：
+用多个db-config.properties配置文件分别配置数据库，这样切换数据库时，只要new SqlSessionFactoryBuilder().build(Resources.getResourceAsStream(resource), properties);就可以轻松实现
+
