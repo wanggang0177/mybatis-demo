@@ -53,3 +53,5 @@ UserMapper.xml的作用：
 建议：
 用多个db-config.properties配置文件分别配置数据库，这样切换数据库时，只要new SqlSessionFactoryBuilder().build(Resources.getResourceAsStream(resource), properties);就可以轻松实现
 
+3. 事物管理：
+通过session开启事物，和jdbc差不多，没有类似spring一样的事物管理器

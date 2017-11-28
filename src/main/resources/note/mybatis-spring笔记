@@ -1,0 +1,15 @@
+mybatis-spring
+
+主要配置文件：
+appliation.xml 主要配置bean（包括datasource，sqlSessionFactory）
+mybatis.xml 主要配置<mappers></mappers> 属性，查找对应的写sql语句的mapper文件,以及实体类的别名属性<typeAliases>  </typeAliases>  
+
+首先加载appliation.xml文件，生成里面定义好的bean对象，放入容器中，当加载到<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">对象时会自动加载所需要的mybatis文件
+
+ <!-- user映射bean-->   
+  <bean id="teacherDao" class="org.mybatis.spring.mapper.MapperFactoryBean"> 
+    <property name="sqlSessionFactory" ref="sqlSessionFactory" />  
+    <property name="mapperInterface" value="mybatis.spring.demo.dao.TeacherDao" /><!-- 映射接口 -->  
+  </bean> 
+生成  mybatis.spring.demo.dao.TeacherDao接口的实现类放入到容器中，key=teacherDao
+  
